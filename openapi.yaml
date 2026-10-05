@@ -1,0 +1,175 @@
+openapi: 3.0.3
+info:
+  title: Smartphone Service API
+  version: "1.0"
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.smartphone-registry.local/v1
+
+security: []
+
+paths:
+  /smartphones:
+    post:
+      operationId: registerSmartphone
+      summary: Зареєструвати нову модель смартфона
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmartphoneRequest'
+      responses:
+        '201':
+          description: Модель зареєстровано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmartphoneReceipt'
+        '400':
+          description: Некоректний запит
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Виробника не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Модель вже зареєстрована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      operationId: listSmartphones
+      summary: Отримати список смартфонів виробника
+      parameters:
+        - name: manufacturerId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Список смартфонів
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Smartphone'
+        '400':
+          description: Некоректні параметри
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /smartphones/{deviceId}:
+    get:
+      operationId: getSmartphone
+      summary: Отримати смартфон за ідентифікатором
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Смартфон знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Smartphone'
+        '404':
+          description: Смартфон не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    SmartphoneSpecs:
+      type: object
+      required: [displayInch, ramGb, storageGb, os]
+      properties:
+        displayInch:
+          type: number
+          format: float
+          minimum: 4.0
+          maximum: 7.5
+        ramGb:
+          type: integer
+          minimum: 1
+        storageGb:
+          type: integer
+          minimum: 8
+        os:
+          type: string
+
+    SmartphoneRequest:
+      type: object
+      required: [manufacturerId, model, specs]
+      properties:
+        manufacturerId:
+          type: string
+        model:
+          type: string
+          minLength: 1
+        specs:
+          $ref: '#/components/schemas/SmartphoneSpecs'
+
+    SmartphoneReceipt:
+      type: object
+      required: [deviceId, status]
+      properties:
+        deviceId:
+          type: string
+        status:
+          type: string
+
+    Smartphone:
+      type: object
+      required: [deviceId, manufacturerId, model, specs, status]
+      properties:
+        deviceId:
+          type: string
+        manufacturerId:
+          type: string
+        model:
+          type: string
+        specs:
+          $ref: '#/components/schemas/SmartphoneSpecs'
+        status:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
